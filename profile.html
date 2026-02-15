@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Profile | Expense Tracker</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h2>Expense Tracker</h2>
+    <span class="page-title">Profile</span>
+  </div>
+
+  <div class="nav-btns">
+    <button onclick="goHome()">Dashboard</button>
+    <button onclick="logout()">Logout</button>
+  </div>
+</div>
+
+<div class="profile-card">
+  <h3>My Profile</h3>
+
+  <input type="text" id="pname" placeholder="Name">
+  <input type="email" id="pemail" placeholder="Email">
+
+  <button onclick="updateProfile()">Update Profile</button>
+</div>
+
+</body>
+</html>

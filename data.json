@@ -1,0 +1,111 @@
+{
+  "users": [
+    {
+      "id": "b8d78761-270f-42c6-8968-88c59eb13e68",
+      "name": "abhiram",
+      "email": "abhiramch955@gmail.com",
+      "passwordHash": "$2a$10$xOnfz0/mmtpjU0JgZPk.AuhqRidmEFGs0mmwb7ZX.8YIk1TZ1ljgS",
+      "createdAt": "2026-02-14T13:09:36.211Z"
+    },
+    {
+      "id": "e185563d-7476-4cd6-a5c7-a79a19e47fdb",
+      "name": "Abhiram",
+      "email": "24pa1a0551@vishnu.edu.in",
+      "passwordHash": "$2a$10$imzktiGzb7NkqHML0BNSdeEzaFg0Td4Pz90Hm6ai9DgBSDQBQiT8a",
+      "createdAt": "2026-02-14T15:04:48.847Z"
+    },
+    {
+      "id": "a5ac40c0-6ade-40d0-b608-dd31ff5765d6",
+      "name": "nithish",
+      "email": "24pa1a45a5@vishnu.edu.in",
+      "passwordHash": "$2a$10$mNzzd1wIy8AAKlc883NnAuc19g0bxIKFG8nbXlgqX3Q./f87I0GHq",
+      "createdAt": "2026-02-14T17:22:24.002Z"
+    },
+    {
+      "id": "dea150a7-8826-47ff-af43-1bbfd44cd180",
+      "name": "Nithish",
+      "email": "s.nithish789012@gmail.com",
+      "passwordHash": "$2a$10$BKPW7ezwK1RLXZy7vc8HhutBYBvqRe7B6P5161SorzjSNg7lZ.rTG",
+      "createdAt": "2026-02-14T18:08:31.179Z"
+    },
+    {
+      "id": "99b987b6-826d-460c-9da5-14c655041798",
+      "name": "yuvraj",
+      "email": "yuvraj123@gmail.com",
+      "passwordHash": "$2a$10$8na2lVme7f0i3usCnPVbY.MtjnKw0RiQGr8D8r6Hkg3/dGJNsJ4LW",
+      "createdAt": "2026-02-14T20:05:22.070Z"
+    },
+    {
+      "id": "116d5fec-1238-44f6-8538-baeea66ddea7",
+      "name": "naveen",
+      "email": "naveen123@gmail.com",
+      "passwordHash": "$2a$10$.eLioV2CQM/StHx1t5cEiOcYzQJoVMNXvSnj1LqdzucK6Mfxgxyr.",
+      "createdAt": "2026-02-14T20:14:47.548Z"
+    }
+  ],
+  "expenses": [
+    {
+      "id": "2cd13c80-bc9b-41fa-a78d-2be09168b835",
+      "userId": "b8d78761-270f-42c6-8968-88c59eb13e68",
+      "date": "2026-02-12",
+      "amount": 200,
+      "category": "Entertainment",
+      "desc": "movie",
+      "createdAt": "2026-02-14T13:28:54.131Z"
+    },
+    {
+      "id": "a01903bc-f3e6-4f37-a902-30398e9e64c7",
+      "userId": "b8d78761-270f-42c6-8968-88c59eb13e68",
+      "date": "2026-02-13",
+      "amount": 40000,
+      "category": "Food",
+      "desc": "restuarant",
+      "createdAt": "2026-02-14T13:39:18.947Z"
+    },
+    {
+      "id": "e1fe1f5e-bc22-46bf-99a8-296603e7c16e",
+      "userId": "b8d78761-270f-42c6-8968-88c59eb13e68",
+      "date": "2026-02-13",
+      "amount": 200,
+      "category": "Food",
+      "desc": "party",
+      "createdAt": "2026-02-14T14:53:25.555Z"
+    },
+    {
+      "id": "26d296f2-ee35-4962-9c73-a7b3e2f1a0fc",
+      "userId": "b8d78761-270f-42c6-8968-88c59eb13e68",
+      "date": "2026-02-13",
+      "amount": 2000,
+      "category": "Transport",
+      "desc": "tour",
+      "createdAt": "2026-02-14T14:54:49.725Z"
+    },
+    {
+      "id": "9fbf7afc-5e1a-4a7d-b82f-744984de681c",
+      "userId": "b8d78761-270f-42c6-8968-88c59eb13e68",
+      "date": "2026-02-07",
+      "amount": 2000,
+      "category": "Shopping",
+      "desc": "slippers",
+      "createdAt": "2026-02-14T15:01:59.085Z"
+    },
+    {
+      "id": "468ce9d6-445e-4a94-b0dc-2fe5dc41aa34",
+      "userId": "b8d78761-270f-42c6-8968-88c59eb13e68",
+      "date": "2026-02-13",
+      "amount": 400,
+      "category": "subscription",
+      "desc": "netflix",
+      "createdAt": "2026-02-14T15:24:25.442Z"
+    },
+    {
+      "id": "111ac962-e43f-405d-aa15-f5a1d0c22b64",
+      "userId": "b8d78761-270f-42c6-8968-88c59eb13e68",
+      "date": "2026-01-16",
+      "amount": 200,
+      "category": "Food",
+      "desc": "breakfast",
+      "createdAt": "2026-02-14T16:34:27.283Z"
+    }
+  ]
+}

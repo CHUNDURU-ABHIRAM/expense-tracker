@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - Expense Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fas fa-wallet"></i>
+                <span>Expense Tracker</span>
+            </div>
+            
+            <nav class="main-nav">
+                <a href="home.html" class="nav-item">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" id="addExpenseBtn">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Add Expense</span>
+                </a>
+                <a href="expenses.html" class="nav-item">
+                    <i class="fas fa-list"></i>
+                    <span>All Expenses</span>
+                </a>
+                <a href="reports.html" class="nav-item active">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Reports</span>
+                </a>
+                <a href="categories.html" class="nav-item">
+                    <i class="fas fa-tags"></i>
+                    <span>Categories</span>
+                </a>
+                <a href="budget.html" class="nav-item">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Budget</span>
+                </a>
+                <a href="profile.html" class="nav-item">
+                    <i class="fas fa-user"></i>
+                    <span>Profile</span>
+                </a>
+                <a href="#" class="nav-item" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </nav>
+            
+            <div class="user-profile">
+                <img src="https://ui-avatars.com/api/?name=User&background=6366f1&color=fff" alt="User" class="avatar">
+                <div class="user-info">
+                    <span class="user-name" id="userName">Loading...</span>
+                    <a href="#" id="logoutBtn" class="logout-link">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="topbar">
+                <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search reports...">
+                </div>
+                <div class="topbar-actions">
+                    <div class="notification">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">3</span>
+                    </div>
+                    <div class="date-filter">
+                        <i class="far fa-calendar-alt"></i>
+                        <select id="reportTimeRange">
+                            <option value="thisMonth">This Month</option>
+                            <option value="lastMonth">Last Month</option>
+                            <option value="last3Months">Last 3 Months</option>
+                            <option value="thisYear" selected>This Year</option>
+                            <option value="lastYear">Last Year</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Reports Content -->
+            <div class="dashboard-content">
+                <!-- Summary Cards -->
+                <div class="summary-cards">
+                    <div class="card balance">
+                        <div class="card-icon">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                        <div class="card-details">
+                            <span class="card-title">Balance</span>
+                            <h3 class="amount" id="totalBalance">$10,840</h3>
+                            <span class="trend positive"><i class="fas fa-arrow-up"></i> 12% from last month</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card income">
+                        <div class="card-icon">
+                            <i class="fas fa-arrow-down"></i>
+                        </div>
+                        <div class="card-details">
+                            <span class="card-title">Income</span>
+                            <h3 class="amount" id="totalIncome">$12,000</h3>
+                            <span class="trend positive"><i class="fas fa-arrow-up"></i> 8% from last month</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card expense">
+                        <div class="card-icon">
+                            <i class="fas fa-arrow-up"></i>
+                        </div>
+                        <div class="card-details">
+                            <span class="card-title">Expenses</span>
+                            <h3 class="amount" id="totalExpense">$1,900</h3>
+                            <span class="trend negative"><i class="fas fa-arrow-down"></i> 5% from last month</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transaction Type Toggle -->
+                <div class="transaction-toggle">
+                    <div class="toggle-buttons">
+                        <button class="toggle-btn active" data-type="income">Income</button>
+                        <button class="toggle-btn" data-type="expense">Expense</button>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="charts-row">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3>Category Breakdown</h3>
+                            <select id="chartType">
+                                <option value="doughnut">Donut Chart</option>
+                                <option value="pie">Pie Chart</option>
+                                <option value="bar">Bar Chart</option>
+                            </select>
+                        </div>
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                    
+                    <div class="recent-transactions">
+                        <div class="chart-header">
+                            <h3>Recent Transactions</h3>
+                            <button class="btn-primary" id="viewAllTransactions">
+                                <i class="fas fa-eye"></i> View All
+                            </button>
+                        </div>
+                        <div class="transactions-list" id="recentTransactionsList">
+                            <div class="transaction-item">
+                                <div class="transaction-icon">
+                                    <i class="fas fa-shopping-cart" style="color: #8b5cf6;"></i>
+                                </div>
+                                <div class="transaction-details">
+                                    <div class="transaction-title">Shopping</div>
+                                    <div class="transaction-date">Oct 15, 2024</div>
+                                </div>
+                                <div class="transaction-amount expense">-$245.00</div>
+                            </div>
+                            <div class="transaction-item">
+                                <div class="transaction-icon">
+                                    <i class="fas fa-home" style="color: #3b82f6;"></i>
+                                </div>
+                                <div class="transaction-details">
+                                    <div class="transaction-title">Home Maintenance</div>
+                                    <div class="transaction-date">Oct 14, 2024</div>
+                                </div>
+                                <div class="transaction-amount expense">-$180.00</div>
+                            </div>
+                            <div class="transaction-item">
+                                <div class="transaction-icon">
+                                    <i class="fas fa-graduation-cap" style="color: #10b981;"></i>
+                                </div>
+                                <div class="transaction-details">
+                                    <div class="transaction-title">Education</div>
+                                    <div class="transaction-date">Oct 13, 2024</div>
+                                </div>
+                                <div class="transaction-amount expense">-$120.00</div>
+                            </div>
+                            <div class="transaction-item">
+                                <div class="transaction-icon">
+                                    <i class="fas fa-briefcase" style="color: #f59e0b;"></i>
+                                </div>
+                                <div class="transaction-details">
+                                    <div class="transaction-title">Salary</div>
+                                    <div class="transaction-date">Oct 12, 2024</div>
+                                </div>
+                                <div class="transaction-amount income">+$3,000.00</div>
+                            </div>
+                            <div class="transaction-item">
+                                <div class="transaction-icon">
+                                    <i class="fas fa-utensils" style="color: #ef4444;"></i>
+                                </div>
+                                <div class="transaction-details">
+                                    <div class="transaction-title">Food & Dining</div>
+                                    <div class="transaction-date">Oct 11, 2024</div>
+                                </div>
+                                <div class="transaction-amount expense">-$85.00</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Charts -->
+                <div class="charts-row">
+                    <div class="chart-container full-width">
+                        <div class="chart-header">
+                            <h3>Income vs Expenses Trend</h3>
+                            <div class="chart-controls">
+                                <select id="trendPeriod">
+                                    <option value="6months">Last 6 Months</option>
+                                    <option value="1year">Last Year</option>
+                                    <option value="2years">Last 2 Years</option>
+                                </select>
+                            </div>
+                        </div>
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Detailed Analytics -->
+                <div class="analytics-grid">
+                    <div class="analytics-card">
+                        <h3>Top Spending Categories</h3>
+                        <div class="category-list">
+                            <div class="category-item">
+                                <div class="category-info">
+                                    <div class="category-color" style="background: #8b5cf6;"></div>
+                                    <span class="category-name">Shopping</span>
+                                </div>
+                                <span class="category-amount">$2,450</span>
+                            </div>
+                            <div class="category-item">
+                                <div class="category-info">
+                                    <div class="category-color" style="background: #3b82f6;"></div>
+                                    <span class="category-name">Home Maintenance</span>
+                                </div>
+                                <span class="category-amount">$1,800</span>
+                            </div>
+                            <div class="category-item">
+                                <div class="category-info">
+                                    <div class="category-color" style="background: #10b981;"></div>
+                                    <span class="category-name">Education</span>
+                                </div>
+                                <span class="category-amount">$1,200</span>
+                            </div>
+                            <div class="category-item">
+                                <div class="category-info">
+                                    <div class="category-color" style="background: #f59e0b;"></div>
+                                    <span class="category-name">Food & Dining</span>
+                                </div>
+                                <span class="category-amount">$980</span>
+                            </div>
+                            <div class="category-item">
+                                <div class="category-info">
+                                    <div class="category-color" style="background: #ef4444;"></div>
+                                    <span class="category-name">Transportation</span>
+                                </div>
+                                <span class="category-amount">$750</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="analytics-card">
+                        <h3>Budget Performance</h3>
+                        <div class="budget-list">
+                            <div class="budget-item">
+                                <div class="budget-info">
+                                    <span class="budget-category">Shopping</span>
+                                    <div class="budget-progress">
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" style="width: 85%; background: #ef4444;"></div>
+                                        </div>
+                                        <span class="budget-percentage">85%</span>
+                                    </div>
+                                </div>
+                                <span class="budget-amount">$2,450 / $3,000</span>
+                            </div>
+                            <div class="budget-item">
+                                <div class="budget-info">
+                                    <span class="budget-category">Food & Dining</span>
+                                    <div class="budget-progress">
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" style="width: 65%; background: #f59e0b;"></div>
+                                        </div>
+                                        <span class="budget-percentage">65%</span>
+                                    </div>
+                                </div>
+                                <span class="budget-amount">$980 / $1,500</span>
+                            </div>
+                            <div class="budget-item">
+                                <div class="budget-info">
+                                    <span class="budget-category">Transportation</span>
+                                    <div class="budget-progress">
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" style="width: 45%; background: #10b981;"></div>
+                                        </div>
+                                        <span class="budget-percentage">45%</span>
+                                    </div>
+                                </div>
+                                <span class="budget-amount">$750 / $1,000</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="firebase-config.js"></script>
+    <script src="auth.js"></script>
+    <script src="expense-manager.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Charts
+            initializeCharts();
+            
+            // Mobile menu toggle
+            const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+            const sidebar = document.querySelector('.sidebar');
+            
+            mobileMenuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+            });
+
+            // Transaction type toggle
+            const toggleBtns = document.querySelectorAll('.toggle-btn');
+            toggleBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    toggleBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    updateCharts(this.dataset.type);
+                });
+            });
+
+            // Chart type selector
+            document.getElementById('chartType').addEventListener('change', function() {
+                updateCategoryChart(this.value);
+            });
+
+            // Time range selector
+            document.getElementById('reportTimeRange').addEventListener('change', function() {
+                updateAllCharts();
+            });
+
+            // View all transactions
+            document.getElementById('viewAllTransactions').addEventListener('click', function() {
+                window.location.href = 'expenses.html';
+            });
+        });
+
+        function initializeCharts() {
+            // Category Breakdown Chart (Donut)
+            const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+            window.categoryChart = new Chart(categoryCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Shopping', 'Home Maintenance', 'Education', 'Food & Dining', 'Transportation', 'Other'],
+                    datasets: [{
+                        data: [2450, 1800, 1200, 980, 750, 520],
+                        backgroundColor: [
+                            '#8b5cf6',
+                            '#3b82f6',
+                            '#10b981',
+                            '#f59e0b',
+                            '#ef4444',
+                            '#64748b'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Trend Chart (Line)
+            const trendCtx = document.getElementById('trendChart').getContext('2d');
+            window.trendChart = new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: ['May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
+                    datasets: [{
+                        label: 'Income',
+                        data: [3000, 3000, 3500, 3000, 3000, 3000],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Expenses',
+                        data: [2100, 1900, 2300, 1800, 2000, 1900],
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCategoryChart(type) {
+            window.categoryChart.config.type = type;
+            window.categoryChart.update();
+        }
+
+        function updateCharts(type) {
+            // Update chart data based on transaction type
+            console.log('Updating charts for type:', type);
+        }
+
+        function updateAllCharts() {
+            // Update all charts with new time range
+            console.log('Updating all charts');
+        }
+    </script>
+</body>
+</html>

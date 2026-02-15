@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <!-- LOGIN PAGE -->
+    <div id="loginPage" class="page">
+        <div class="container">
+            <div class="form-container">
+                <div class="logo">
+                    <h1>💰 Expense Tracker</h1>
+                    <p>Track your expenses, save money, and achieve your financial goals</p>
+                </div>
+                
+                <h2>Welcome Back</h2>
+                <p class="subtitle">Sign in to continue to your account</p>
+                
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="loginEmail">Email Address</label>
+                        <input type="email" id="loginEmail" placeholder="Enter your email" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" placeholder="Enter your password" required minlength="6">
+                    </div>
+                    
+                    <button type="submit" class="btn-primary">Sign In</button>
+                </form>
+                
+                <p class="auth-link">
+                    Don't have an account? <a href="#" onclick="showPage('signupPage')">Sign up</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SIGNUP PAGE -->
+    <div id="signupPage" class="page" style="display: none;">
+        <div class="container">
+            <div class="form-container">
+                <h2>Create an Account</h2>
+                <form id="signupForm">
+                    <div class="form-group">
+                        <label for="fullName">Full Name</label>
+                        <input type="text" id="fullName" placeholder="Enter your full name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signupEmail">Email</label>
+                        <input type="email" id="signupEmail" placeholder="Enter your email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" placeholder="Enter your phone number" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signupPassword">Password</label>
+                        <input type="password" id="signupPassword" placeholder="Create a password" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <input type="password" id="confirmPassword" placeholder="Confirm your password" required>
+                    </div>
+                    <button type="submit" class="btn-primary">Create Account</button>
+                </form>
+                <p class="auth-link">Already have an account? <a href="#" onclick="showPage('loginPage')">Login here</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- DASHBOARD PAGE -->
+    <div id="dashboardPage" class="page" style="display: none;">
+        <div class="dashboard">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="logo">
+                    <i class="fas fa-wallet"></i>
+                    <span>Expense Tracker</span>
+                </div>
+                
+                <nav class="main-nav">
+                    <a href="#" onclick="showPage('dashboardPage')" class="nav-item active">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="#" onclick="showPage('addExpensePage')" class="nav-item">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Add Expense</span>
+                    </a>
+                    <a href="#" onclick="showPage('expensesPage')" class="nav-item">
+                        <i class="fas fa-list"></i>
+                        <span>All Expenses</span>
+                    </a>
+                    <a href="#" onclick="showPage('reportsPage')" class="nav-item">
+                        <i class="fas fa-chart-pie"></i>
+                        <span>Reports</span>
+                    </a>
+                    <a href="#" onclick="showPage('profilePage')" class="nav-item">
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
+                    </a>
+                    <a href="#" onclick="logout()" class="nav-item">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </nav>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <header class="topbar">
+                    <h2>Dashboard</h2>
+                    <div class="user-profile-small">
+                        <span id="dashboardUserName">User</span>
+                    </div>
+                </header>
+
+                <div class="dashboard-content">
+                    <h3>Welcome! Your expenses from the last 3 days are listed below.</h3>
+                    
+                    <!-- Monthly Budget Progress -->
+                    <div id="budgetAlertBox" style="display:none; background:#fff3cd; border:1px solid #ffc107; border-radius:8px; padding:1.5rem; margin-bottom:2rem;">
+                        <h4 style="color:#856404; margin-bottom:0.5rem;">⚠️ Budget Alert</h4>
+                        <div id="budgetAlertText"></div>
+                    </div>
+
+                    <div id="monthlyBudgetBox" style="display:none; background:#f0f9ff; border:1px solid #3b82f6; border-radius:8px; padding:1.5rem; margin-bottom:2rem;">
+                        <h4 style="color:#1e40af; margin-bottom:1rem;">📊 Monthly Budget Progress</h4>
+                        <div style="margin-bottom:0.5rem;">
+                            <span id="monthlyBudgetText"></span>
+                        </div>
+                        <div style="background:#dbeafe; border-radius:4px; height:16px; overflow:hidden;">
+                            <div id="monthlyBudgetBar" style="background:#3b82f6; height:100%; width:0%; transition:width 0.3s;"></div>
+                        </div>
+                    </div>
+
+                    <table class="expenses-table" id="dashboardExpenseTable">
+                        <tr>
+                            <th>Date</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                        </tr>
+                    </table>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- ADD EXPENSE PAGE -->
+    <div id="addExpensePage" class="page" style="display: none;">
+        <div class="dashboard">
+            <aside class="sidebar">
+                <div class="logo">
+                    <i class="fas fa-wallet"></i>
+                    <span>Expense Tracker</span>
+                </div>
+                <nav class="main-nav">
+                    <a href="#" onclick="showPage('dashboardPage')" class="nav-item">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="#" onclick="showPage('addExpensePage')" class="nav-item active">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Add Expense</span>
+                    </a>
+                    <a href="#" onclick="showPage('expensesPage')" class="nav-item">
+                        <i class="fas fa-list"></i>
+                        <span>All Expenses</span>
+                    </a>
+                    <a href="#" onclick="showPage('reportsPage')" class="nav-item">
+                        <i class="fas fa-chart-pie"></i>
+                        <span>Reports</span>
+                    </a>
+                    <a href="#" onclick="showPage('profilePage')" class="nav-item">
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
+                    </a>
+                    <a href="#" onclick="logout()" class="nav-item">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </nav>
+            </aside>
+
+            <main class="main-content">
+                <header class="topbar">
+                    <h2>Add Expense</h2>
+                </header>
+
+                <div class="form-container">
+                    <form id="addExpenseForm">
+                        <div class="form-group">
+                            <label for="date">Date</label>
+                            <input type="date" id="date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="category">Category</label>
+                            <select id="category" required>
+                                <option value="">Select a category</option>
+                                <option value="Food">Food</option>
+                                <option value="Restaurant">Restaurant</option>
+                                <option value="Transport">Transport</option>
+                                <option value="Entertainment">Entertainment</option>
+                                <option value="Utilities">Utilities</option>
+                                <option value="Shopping">Shopping</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="otherCategoryGroup" style="display: none;">
+                            <label for="otherCategory">Please specify the category</label>
+                            <input type="text" id="otherCategory" placeholder="E.g., Medical, Gifts, Subscriptions">
+                        </div>
+                        <div class="form-group">
+                            <label for="amount">Amount</label>
+                            <input type="number" id="amount" placeholder="0.00" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="desc">Description</label>
+                            <input type="text" id="desc" placeholder="Enter description" required>
+                        </div>
+                        <button type="submit" class="btn-primary">Add Expense</button>
+                    </form>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- EXPENSES PAGE -->
+    <div id="expensesPage" class="page" style="display: none;">
+        <div class="dashboard">
+            <aside class="sidebar">
+                <div class="logo">
+                    <i class="fas fa-wallet"></i>
+                    <span>Expense Tracker</span>
+                </div>
+                <nav class="main-nav">
+                    <a href="#" onclick="showPage('dashboardPage')" class="nav-item">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="#" onclick="showPage('addExpensePage')" class="nav-item">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Add Expense</span>
+                    </a>
+                    <a href="#" onclick="showPage('expensesPage')" class="nav-item active">
+                        <i class="fas fa-list"></i>
+                        <span>All Expenses</span>
+                    </a>
+                    <a href="#" onclick="showPage('reportsPage')" class="nav-item">
+                        <i class="fas fa-chart-pie"></i>
+                        <span>Reports</span>
+                    </a>
+                    <a href="#" onclick="showPage('profilePage')" class="nav-item">
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
+                    </a>
+                    <a href="#" onclick="logout()" class="nav-item">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </nav>
+            </aside>
+
+            <main class="main-content">
+                <header class="topbar">
+                    <h2>All Expenses</h2>
+                </header>
+
+                <div class="filter-section">
+                    <div class="filter-group">
+                        <label for="filterMonth">Month:</label>
+                        <select id="filterMonth">
+                            <option value="">All Months</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterYear">Year:</label>
+                        <select id="filterYear">
+                            <option value="">All Years</option>
+                        </select>
+                    </div>
+                    <button class="btn-secondary" onclick="resetExpenseFilters()">Reset Filters</button>
+                </div>
+
+                <div class="expenses-container">
+                    <table class="expenses-table" id="expenseTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Category</th>
+                                <th>Description</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- REPORTS PAGE -->
+    <div id="reportsPage" class="page" style="display: none;">
+        <div class="dashboard">
+            <aside class="sidebar">
+                <div class="logo">
+                    <i class="fas fa-wallet"></i>
+                    <span>Expense Tracker</span>
+                </div>
+                <nav class="main-nav">
+                    <a href="#" onclick="showPage('dashboardPage')" class="nav-item">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="#" onclick="showPage('addExpensePage')" class="nav-item">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Add Expense</span>
+                    </a>
+                    <a href="#" onclick="showPage('expensesPage')" class="nav-item">
+                        <i class="fas fa-list"></i>
+                        <span>All Expenses</span>
+                    </a>
+                    <a href="#" onclick="showPage('reportsPage')" class="nav-item active">
+                        <i class="fas fa-chart-pie"></i>
+                        <span>Reports</span>
+                    </a>
+                    <a href="#" onclick="showPage('profilePage')" class="nav-item">
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
+                    </a>
+                    <a href="#" onclick="logout()" class="nav-item">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </nav>
+            </aside>
+
+            <main class="main-content">
+                <header class="topbar">
+                    <h2>Reports</h2>
+                </header>
+
+                <div class="reports-container">
+                    <div class="report-summary">
+                        <h3>Expense Summary</h3>
+                        <div class="summary-item">
+                            <span>Total Expenses:</span>
+                            <span class="amount" id="totalExpenses">$0.00</span>
+                        </div>
+                        <div class="summary-item">
+                            <span>By Category:</span>
+                            <ul id="categoryBreakdown">
+                            </ul>
+                            <div style="margin-top:1rem;">
+                                <button class="btn-primary" onclick="exportCSV()">Export CSV</button>
+                            </div>
+                        </div>
+                            <div style="margin-top:1.5rem">
+                                <div class="report-filters" style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:center;">
+                                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                                        <strong>Category Chart Filters:</strong>
+                                        <label style="margin-left:8px;">Year:
+                                            <select id="categoryYear" onchange="onCategoryFilterChange()"></select>
+                                        </label>
+                                        <label style="margin-left:8px;">Month:
+                                            <select id="categoryMonth" onchange="onCategoryFilterChange()"></select>
+                                        </label>
+                                    </div>
+
+                                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                                        <strong>Trend Chart Filters:</strong>
+                                        <label style="margin-left:8px;">Mode:
+                                            <select id="trendMode" onchange="onTrendFilterChange()">
+                                                <option value="monthly">Monthly</option>
+                                                <option value="yearly">Yearly</option>
+                                            </select>
+                                        </label>
+                                        <label style="margin-left:8px;">Year:
+                                            <select id="trendYear" onchange="onTrendFilterChange()"></select>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                    </div>
+                        <div class="charts-row" style="margin-top:1.5rem;">
+                            <div class="chart-container">
+                                <div class="chart-header">
+                                    <h3 id="chartTitle">Category Breakdown</h3>
+                                </div>
+                                <canvas id="categoryChart"></canvas>
+                            </div>
+                            <div class="categories-chart">
+                                <div class="chart-header">
+                                    <h3 id="trendTitle">Trends</h3>
+                                </div>
+                                <canvas id="trendChart"></canvas>
+                            </div>
+                        </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- PROFILE PAGE -->
+    <div id="profilePage" class="page" style="display: none;">
+        <div class="dashboard">
+            <aside class="sidebar">
+                <div class="logo">
+                    <i class="fas fa-wallet"></i>
+                    <span>Expense Tracker</span>
+                </div>
+                <nav class="main-nav">
+                    <a href="#" onclick="showPage('dashboardPage')" class="nav-item">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="#" onclick="showPage('addExpensePage')" class="nav-item">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Add Expense</span>
+                    </a>
+                    <a href="#" onclick="showPage('expensesPage')" class="nav-item">
+                        <i class="fas fa-list"></i>
+                        <span>All Expenses</span>
+                    </a>
+                    <a href="#" onclick="showPage('reportsPage')" class="nav-item">
+                        <i class="fas fa-chart-pie"></i>
+                        <span>Reports</span>
+                    </a>
+                    <a href="#" onclick="showPage('profilePage')" class="nav-item active">
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
+                    </a>
+                    <a href="#" onclick="logout()" class="nav-item">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </nav>
+            </aside>
+
+            <main class="main-content">
+                <header class="topbar">
+                    <h2>Profile</h2>
+                </header>
+
+                <div class="profile-card">
+                    <div class="profile-head">
+                        <div class="profile-avatar">
+                            <img id="profileAvatarImg" src="https://ui-avatars.com/api/?name=User&background=4a6bff&color=fff&size=128" alt="avatar">
+                        </div>
+                        <h3>My Profile</h3>
+                        <p class="profile-sub">Update your name and email shown across the app</p>
+                    </div>
+
+                    <div class="profile-form">
+                        <div class="form-group">
+                            <label for="pname">Name</label>
+                            <input type="text" id="pname" placeholder="Name">
+                        </div>
+                        <div class="form-group">
+                            <label for="pemail">Email</label>
+                            <input type="email" id="pemail" placeholder="Email">
+                        </div>
+                        <div class="form-group">
+                            <label for="avatarInput">Profile Picture</label>
+                            <input type="file" id="avatarInput" accept="image/*">
+                        </div>
+                        <button onclick="updateProfile()" class="btn-primary"><i class="fas fa-user-check" style="margin-right:8px"></i>Update Profile</button>
+                    </div>
+                </div>
+
+                <div class="profile-card" style="margin-top:2rem;">
+                    <div class="profile-head">
+                        <h3>💰 Budget Settings</h3>
+                        <p class="profile-sub">Set monthly budget and category-wise spending limits</p>
+                    </div>
+
+                    <div class="profile-form">
+                        <div class="form-group">
+                            <label for="monthlyBudgetInput">Monthly Budget ($)</label>
+                            <input type="number" id="monthlyBudgetInput" placeholder="e.g., 5000" min="0" step="0.01">
+                        </div>
+
+                        <div style="margin-top:1.5rem;">
+                            <h4 style="margin-bottom:1rem;">Category-wise Budgets ($)</h4>
+                            <div id="categoryBudgetsContainer">
+                                <!-- Will be populated dynamically -->
+                            </div>
+                        </div>
+
+                        <button onclick="saveBudgets()" class="btn-primary" style="margin-top:1.5rem;"><i class="fas fa-save" style="margin-right:8px"></i>Save Budgets</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script>
+        // Navigation helper
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.style.display = 'none');
+            document.getElementById(pageId).style.display = 'block';
+        }
+
+        // Helper: API request with auth
+        async function apiFetch(path, opts = {}) {
+            const token = localStorage.getItem('token');
+            opts.headers = opts.headers || {};
+            opts.headers['Content-Type'] = 'application/json';
+            if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+            const res = await fetch('/api' + path, opts);
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok) throw json;
+            return json;
+        }
+
+        // Check auth and route
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                showPage('dashboardPage');
+                loadDashboard();
+            } else {
+                showPage('loginPage');
+            }
+        }
+
+        // Signup -> POST /api/signup
+        document.getElementById('signupForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const name = document.getElementById('fullName').value.trim();
+                const email = document.getElementById('signupEmail').value.trim();
+                const password = document.getElementById('signupPassword').value;
+                const confirm = document.getElementById('confirmPassword').value;
+                if (password !== confirm) return alert('Passwords do not match');
+                const resp = await apiFetch('/signup', { method: 'POST', body: JSON.stringify({ name, email, password }) });
+                localStorage.setItem('token', resp.token);
+                localStorage.setItem('user', JSON.stringify(resp.user));
+                updateAvatarUI(resp.user);
+                showPage('dashboardPage');
+                loadDashboard();
+            } catch (err) {
+                alert(err.error || 'Signup failed');
+            }
+        });
+
+        // Login -> POST /api/login
+        document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const email = document.getElementById('loginEmail').value.trim();
+                const password = document.getElementById('loginPassword').value;
+                const resp = await apiFetch('/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+                localStorage.setItem('token', resp.token);
+                localStorage.setItem('user', JSON.stringify(resp.user));
+                updateAvatarUI(resp.user);
+                showPage('dashboardPage');
+                loadDashboard();
+            } catch (err) {
+                alert(err.error || 'Login failed');
+            }
+        });
+
+        // Load dashboard data
+        async function loadDashboard() {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            document.getElementById('dashboardUserName').textContent = user.name || 'User';
+            await loadExpenses();
+            await loadRecentExpenses();
+            await updateBudgetStatus();
+        }
+
+        // Add expense -> POST /api/expenses
+        // Show/hide "Other" category input
+        document.getElementById('category')?.addEventListener('change', function() {
+            const otherGroup = document.getElementById('otherCategoryGroup');
+            if (this.value === 'Other') {
+                otherGroup.style.display = 'block';
+                document.getElementById('otherCategory').required = true;
+            } else {
+                otherGroup.style.display = 'none';
+                document.getElementById('otherCategory').required = false;
+            }
+        });
+
+        document.getElementById('addExpenseForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const date = document.getElementById('date').value;
+                const amount = document.getElementById('amount').value;
+                let category = document.getElementById('category').value;
+                const desc = document.getElementById('desc').value;
+                
+                // If Other is selected, use the custom category name
+                if (category === 'Other') {
+                    const otherValue = document.getElementById('otherCategory').value.trim();
+                    if (!otherValue) return alert('Please specify the category');
+                    category = otherValue;
+                }
+                
+                if (!date || !amount || !category || !desc) return alert('Fill all fields');
+                await apiFetch('/expenses', { method: 'POST', body: JSON.stringify({ date, amount, category, desc }) });
+                document.getElementById('addExpenseForm').reset();
+                document.getElementById('otherCategoryGroup').style.display = 'none';
+                showPage('expensesPage');
+                await loadExpenses();
+                await loadRecentExpenses();
+                // Check and show budget alerts after adding expense
+                setTimeout(async () => { await updateBudgetStatus(); }, 500);
+            } catch (err) {
+                alert(err.error || 'Could not add expense');
+            }
+        });
+
+        // Load expenses -> GET /api/expenses
+        let allExpenses = [];
+
+        async function loadExpenses() {
+            try {
+                const resp = await apiFetch('/expenses');
+                allExpenses = resp.expenses || [];
+                populateExpenseFilters(allExpenses);
+                displayFilteredExpenses(allExpenses);
+                // update reports and charts
+                try { updateReports(allExpenses); } catch(e) { console.error('reports update failed', e); }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function populateExpenseFilters(expenses) {
+            // Get unique months and years
+            const months = new Set();
+            const years = new Set();
+            
+            expenses.forEach(exp => {
+                if (exp.date) {
+                    const d = new Date(exp.date);
+                    const year = d.getFullYear();
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    months.add(month);
+                    years.add(year);
+                }
+            });
+
+            // Populate month dropdown
+            const monthSelect = document.getElementById('filterMonth');
+            monthSelect.innerHTML = '<option value="">All Months</option>';
+            Array.from(months).sort().forEach(m => {
+                const monthName = new Date(2000, parseInt(m) - 1).toLocaleDateString('en-US', { month: 'long' });
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.text = monthName;
+                monthSelect.appendChild(opt);
+            });
+
+            // Populate year dropdown
+            const yearSelect = document.getElementById('filterYear');
+            yearSelect.innerHTML = '<option value="">All Years</option>';
+            Array.from(years).sort((a, b) => b - a).forEach(y => {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.text = y;
+                yearSelect.appendChild(opt);
+            });
+
+            // Add event listeners
+            monthSelect.removeEventListener('change', applyExpenseFilters);
+            yearSelect.removeEventListener('change', applyExpenseFilters);
+            monthSelect.addEventListener('change', applyExpenseFilters);
+            yearSelect.addEventListener('change', applyExpenseFilters);
+        }
+
+        function applyExpenseFilters() {
+            const selectedMonth = document.getElementById('filterMonth').value;
+            const selectedYear = document.getElementById('filterYear').value;
+
+            let filtered = allExpenses.filter(exp => {
+                if (!exp.date) return false;
+                const d = new Date(exp.date);
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const year = d.getFullYear();
+
+                if (selectedMonth && month !== selectedMonth) return false;
+                if (selectedYear && year !== parseInt(selectedYear)) return false;
+                return true;
+            });
+
+            displayFilteredExpenses(filtered);
+        }
+
+        function displayFilteredExpenses(expenses) {
+            const table = document.querySelector('#expenseTable tbody');
+            if (!table) return;
+            table.innerHTML = '';
+            let total = 0;
+            
+            expenses.forEach((exp) => {
+                total += Number(exp.amount || 0);
+                const row = table.insertRow();
+                row.innerHTML = `
+                    <td data-label="Date">${exp.date}</td>
+                    <td data-label="Amount">$${Number(exp.amount).toFixed(2)}</td>
+                    <td data-label="Category">${exp.category}</td>
+                    <td data-label="Description">${exp.desc}</td>
+                    <td data-label="Action">
+                        <button class="btn-delete" onclick="deleteExpense('${exp.id}')">Delete</button>
+                    </td>
+                `;
+                row.classList.add('expense-row');
+            });
+            
+            // Show message if no expenses found
+            if (expenses.length === 0) {
+                const row = table.insertRow();
+                row.innerHTML = '<td colspan="5" style="text-align: center; padding: 20px;">No expenses found for the selected period</td>';
+            }
+            
+            document.getElementById('totalExpenses').textContent = `$${total.toFixed(2)}`;
+        }
+
+        function resetExpenseFilters() {
+            document.getElementById('filterMonth').value = '';
+            document.getElementById('filterYear').value = '';
+            displayFilteredExpenses(allExpenses);
+        }
+
+        // Reports & Charts
+        let categoryChart = null;
+        let trendChart = null;
+
+        function populateYearSelector(expenses) {
+            const years = new Set();
+            expenses.forEach(e => {
+                if (!e.date) return;
+                const y = new Date(e.date).getFullYear();
+                years.add(y);
+            });
+            const yearSelect = document.getElementById('reportYear');
+            yearSelect.innerHTML = '';
+            const sorted = Array.from(years).sort((a,b)=>b-a);
+            if (sorted.length === 0) {
+                const cur = new Date().getFullYear();
+                yearSelect.appendChild(new Option(cur, cur));
+            } else {
+                sorted.forEach(y => yearSelect.appendChild(new Option(y, y)));
+            }
+            // Populate months for the selected year
+            populateMonthSelector(expenses);
+        }
+
+        function populateMonthSelector(expenses) {
+            const year = Number(document.getElementById('reportYear').value) || new Date().getFullYear();
+            const months = new Set();
+            
+            expenses.forEach(e => {
+                if (!e.date) return;
+                const d = new Date(e.date);
+                if (d.getFullYear() === year) {
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    months.add(month);
+                }
+            });
+
+            const monthSelect = document.getElementById('reportMonth');
+            monthSelect.innerHTML = '<option value="">All Months</option>';
+            Array.from(months).sort().forEach(m => {
+                const monthName = new Date(2000, parseInt(m) - 1).toLocaleDateString('en-US', { month: 'long' });
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.text = monthName;
+                monthSelect.appendChild(opt);
+            });
+        }
+
+        function updateReports(expenses) {
+            // category breakdown
+            const categoryTotals = {};
+            expenses.forEach(e => {
+                const cat = e.category || 'Other';
+                categoryTotals[cat] = (categoryTotals[cat] || 0) + Number(e.amount || 0);
+            });
+            const cb = document.getElementById('categoryBreakdown');
+            cb.innerHTML = '';
+            Object.keys(categoryTotals).sort().forEach(cat => {
+                const li = document.createElement('li');
+                li.textContent = `${cat} : $${Number(categoryTotals[cat]).toFixed(2)}`;
+                cb.appendChild(li);
+            });
+
+            // populate filters for both charts
+            populateCategoryFilters(expenses);
+            populateTrendFilters(expenses);
+
+            // prepare data for charts
+            const categories = Object.keys(categoryTotals);
+            const categoryValues = categories.map(k => categoryTotals[k]);
+
+            // destroy existing charts
+            if (categoryChart) { categoryChart.destroy(); categoryChart = null; }
+            if (trendChart) { trendChart.destroy(); trendChart = null; }
+
+            const ctxCat = document.getElementById('categoryChart').getContext('2d');
+            categoryChart = new Chart(ctxCat, {
+                type: 'pie',
+                data: {
+                    labels: categories,
+                    datasets: [{ data: categoryValues, backgroundColor: categories.map((_,i)=>`hsl(${i*60 % 360} 70% 50%)`)}]
+                },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
+
+            // render both charts using their respective filters
+            renderCategoryChart(expenses);
+            renderTrendChart(expenses);
+        }
+        // renderReportsFromCurrent no longer used; charts are rendered via their own functions
+
+        function populateCategoryFilters(expenses) {
+            const years = new Set();
+            expenses.forEach(e => { if (!e.date) return; years.add(new Date(e.date).getFullYear()); });
+            const cy = document.getElementById('categoryYear');
+            cy.innerHTML = '';
+            Array.from(years).sort((a,b)=>b-a).forEach(y => cy.appendChild(new Option(y,y)));
+            if (!cy.value) cy.value = (new Date()).getFullYear();
+            populateCategoryMonths(expenses);
+        }
+
+        function populateCategoryMonths(expenses) {
+            const year = Number(document.getElementById('categoryYear').value) || new Date().getFullYear();
+            const months = new Set();
+            expenses.forEach(e => { if (!e.date) return; const d=new Date(e.date); if (d.getFullYear()===year) months.add(String(d.getMonth()+1).padStart(2,'0')); });
+            const cm = document.getElementById('categoryMonth');
+            cm.innerHTML = '<option value="">All Months</option>';
+            Array.from(months).sort().forEach(m=>{ const name=new Date(2000,parseInt(m)-1).toLocaleDateString('en-US',{month:'long'}); cm.appendChild(new Option(name,m)); });
+        }
+
+        function populateTrendFilters(expenses) {
+            const years = new Set();
+            expenses.forEach(e => { if (!e.date) return; years.add(new Date(e.date).getFullYear()); });
+            const ty = document.getElementById('trendYear');
+            ty.innerHTML = '';
+            Array.from(years).sort((a,b)=>b-a).forEach(y => ty.appendChild(new Option(y,y)));
+            if (!ty.value) ty.value = (new Date()).getFullYear();
+        }
+
+        function onCategoryFilterChange() {
+            // update months when year changed
+            populateCategoryMonths(allExpenses);
+            renderCategoryChart(allExpenses);
+        }
+
+        function onTrendFilterChange() {
+            renderTrendChart(allExpenses);
+        }
+
+        function renderCategoryChart(expenses) {
+            const year = Number(document.getElementById('categoryYear').value) || new Date().getFullYear();
+            const month = document.getElementById('categoryMonth').value;
+            const filtered = expenses.filter(e=>{ if(!e.date) return false; const d=new Date(e.date); if (d.getFullYear()!==year) return false; if (month && String(d.getMonth()+1).padStart(2,'0')!==month) return false; return true; });
+            const totals = {};
+            filtered.forEach(e=>{ const c=e.category||'Other'; totals[c]=(totals[c]||0)+Number(e.amount||0); });
+            const cats = Object.keys(totals);
+            const vals = cats.map(k=>totals[k]);
+            if (categoryChart) { categoryChart.destroy(); categoryChart=null; }
+            const ctxCat = document.getElementById('categoryChart').getContext('2d');
+            categoryChart = new Chart(ctxCat,{ type:'pie', data:{ labels:cats, datasets:[{ data:vals, backgroundColor: cats.map((_,i)=>`hsl(${i*60%360} 70% 50%)`) }] }, options:{ responsive:true, plugins:{ legend:{ position:'bottom' } } } });
+            const monthName = month ? new Date(2000,parseInt(month)-1).toLocaleDateString('en-US',{month:'long'}) : 'All Months';
+            document.getElementById('chartTitle').textContent = `Category Breakdown - ${monthName} ${year}`;
+        }
+
+        function renderTrendChart(expenses) {
+            const mode = document.getElementById('trendMode').value;
+            const year = Number(document.getElementById('trendYear').value) || new Date().getFullYear();
+            if (trendChart) { trendChart.destroy(); trendChart=null; }
+            if (mode === 'monthly') {
+                const months = Array.from({length:12},(_,i)=>0);
+                expenses.forEach(e=>{ const d=new Date(e.date); if (d.getFullYear()===year) months[d.getMonth()]+=Number(e.amount||0); });
+                const labels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                const ctxTrend = document.getElementById('trendChart').getContext('2d');
+                trendChart = new Chart(ctxTrend,{ type:'bar', data:{ labels, datasets:[{ label:`Monthly (${year})`, data:months, backgroundColor:'rgba(99,102,241,0.8)' }] }, options:{ responsive:true } });
+                document.getElementById('trendTitle').textContent = `Monthly Totals (${year})`;
+            } else {
+                const totalsByYear = {};
+                expenses.forEach(e=>{ const y=new Date(e.date).getFullYear(); totalsByYear[y]=(totalsByYear[y]||0)+Number(e.amount||0); });
+                const yrs = Object.keys(totalsByYear).map(Number).sort();
+                const data = yrs.map(y=>totalsByYear[y]);
+                const ctxTrend = document.getElementById('trendChart').getContext('2d');
+                trendChart = new Chart(ctxTrend,{ type:'line', data:{ labels:yrs, datasets:[{ label:'Yearly Totals', data, borderColor:'rgba(59,130,246,0.9)', backgroundColor:'rgba(59,130,246,0.2)', fill:true }] }, options:{ responsive:true } });
+                document.getElementById('trendTitle').textContent = 'Yearly Totals';
+            }
+        }
+
+        // Delete expense -> DELETE /api/expenses/:id
+        async function deleteExpense(id) {
+            if (!confirm('Delete this expense?')) return;
+            try {
+                await apiFetch('/expenses/' + id, { method: 'DELETE' });
+                await loadExpenses();
+                await loadRecentExpenses();
+            } catch (err) {
+                alert(err.error || 'Could not delete');
+            }
+        }
+
+        // Load recent expenses (last 3 days) into dashboard small table
+        async function loadRecentExpenses() {
+            try {
+                const resp = await apiFetch('/expenses');
+                const expenses = resp.expenses || [];
+                const now = new Date();
+                const recent = expenses.filter(e => {
+                    const d = new Date(e.date);
+                    const diffDays = (now - d) / (1000 * 60 * 60 * 24);
+                    return diffDays >= 0 && diffDays <= 3;
+                }).sort((a,b) => new Date(b.date) - new Date(a.date));
+
+                const table = document.getElementById('dashboardExpenseTable');
+                if (!table) return;
+                // rebuild table with header
+                table.innerHTML = `\n                    <tr>\n                        <th>Date</th>\n                        <th>Category</th>\n                        <th>Description</th>\n                        <th>Amount</th>\n                    </tr>`;
+                recent.forEach(exp => {
+                    const row = table.insertRow();
+                    row.innerHTML = `\n                        <td>${exp.date}</td>\n                        <td>${exp.category}</td>\n                        <td>${exp.desc}</td>\n                        <td>$${Number(exp.amount).toFixed(2)}</td>`;
+                });
+            } catch (err) {
+                console.error('Could not load recent expenses', err);
+            }
+        }
+
+        // Update avatar image element (uses uploaded avatar or generated initial avatar)
+        function updateAvatarUI(user) {
+            const img = document.getElementById('profileAvatarImg');
+            if (!img) return;
+            if (user && user.avatar) {
+                img.src = user.avatar;
+            } else {
+                const name = (user && user.name) ? user.name : 'User';
+                img.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=4a6bff&color=fff&size=128`;
+            }
+        }
+
+        // Profile update - persist to server
+        async function updateProfile() {
+            const name = document.getElementById('pname').value.trim();
+            const email = document.getElementById('pemail').value.trim();
+            try {
+                const resp = await apiFetch('/profile', { method: 'PUT', body: JSON.stringify({ name, email }) });
+                localStorage.setItem('user', JSON.stringify(resp.user));
+                updateAvatarUI(resp.user);
+                document.getElementById('dashboardUserName').textContent = resp.user.name || 'User';
+                alert('Profile updated');
+            } catch (err) {
+                alert(err.error || 'Could not update profile');
+            }
+        }
+
+        // Upload avatar when chosen
+        document.getElementById('avatarInput')?.addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const fd = new FormData();
+            fd.append('avatar', file);
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch('/api/profile/avatar', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
+                const json = await res.json();
+                if (!res.ok) return alert(json.error || 'Upload failed');
+                localStorage.setItem('user', JSON.stringify(json.user));
+                updateAvatarUI(json.user);
+                alert('Avatar uploaded');
+            } catch (err) {
+                console.error(err);
+                alert('Upload failed');
+            }
+        });
+
+        async function loadProfile() {
+            try {
+                const resp = await apiFetch('/profile');
+                const user = resp.user || {};
+                document.getElementById('pname').value = user.name || '';
+                document.getElementById('pemail').value = user.email || '';
+                localStorage.setItem('user', JSON.stringify(user));
+                updateAvatarUI(user);
+                // Load budgets when profile page opens
+                loadBudgets();
+            } catch (err) {
+                // fallback to local
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                document.getElementById('pname').value = user.name || '';
+                document.getElementById('pemail').value = user.email || '';
+                updateAvatarUI(user);
+                loadBudgets();
+            }
+        }
+
+        // Load budgets for profile page
+        async function loadBudgets() {
+            try {
+                const resp = await apiFetch('/budgets');
+                const budgets = resp.budgets || {};
+                document.getElementById('monthlyBudgetInput').value = budgets.monthlyBudget || '';
+                
+                // Populate category budgets
+                const cats = ['Food', 'Transport', 'Shopping', 'Entertainment', 'Other'];
+                const container = document.getElementById('categoryBudgetsContainer');
+                container.innerHTML = '';
+                const catBudgets = budgets.categoryBudgets || {};
+                cats.forEach(cat => {
+                    const div = document.createElement('div');
+                    div.className = 'form-group';
+                    div.innerHTML = `
+                        <label for="cat_${cat}">${cat}</label>
+                        <input type="number" id="cat_${cat}" placeholder="Budget for ${cat}" min="0" step="0.01" value="${catBudgets[cat] || ''}">
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (err) {
+                console.error('Could not load budgets', err);
+            }
+        }
+
+        // Save budgets
+        async function saveBudgets() {
+            try {
+                const monthlyBudget = parseFloat(document.getElementById('monthlyBudgetInput').value) || 0;
+                const categoryBudgets = {};
+                const cats = ['Food', 'Transport', 'Shopping', 'Entertainment', 'Other'];
+                cats.forEach(cat => {
+                    const val = parseFloat(document.getElementById(`cat_${cat}`).value);
+                    if (val > 0) categoryBudgets[cat] = val;
+                });
+                
+                await apiFetch('/budgets', { method: 'PUT', body: JSON.stringify({ monthlyBudget, categoryBudgets }) });
+                alert('Budgets saved successfully!');
+                loadBudgets(); // Reload to show saved values
+            } catch (err) {
+                alert(err.error || 'Could not save budgets');
+            }
+        }
+
+        // Check and display budget status on dashboard
+        async function updateBudgetStatus() {
+            try {
+                const resp = await apiFetch('/budgets');
+                const budgets = resp.budgets || {};
+                const monthlyBudget = budgets.monthlyBudget || 0;
+                if (!monthlyBudget) {
+                    document.getElementById('monthlyBudgetBox').style.display = 'none';
+                    document.getElementById('budgetAlertBox').style.display = 'none';
+                    return;
+                }
+
+                // Filter expenses for current month
+                const now = new Date();
+                const currentYear = now.getFullYear();
+                const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+                const monthExpenses = allExpenses.filter(e => {
+                    if (!e.date) return false;
+                    const d = new Date(e.date);
+                    const y = d.getFullYear();
+                    const m = String(d.getMonth() + 1).padStart(2, '0');
+                    return y === currentYear && m === currentMonth;
+                });
+
+                const totalSpent = monthExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+                const percentage = Math.round((totalSpent / monthlyBudget) * 100);
+
+                // Show monthly budget progress
+                document.getElementById('monthlyBudgetBox').style.display = 'block';
+                document.getElementById('monthlyBudgetText').textContent = `Spent: $${totalSpent.toFixed(2)} / $${monthlyBudget.toFixed(2)} (${percentage}%)`;
+                document.getElementById('monthlyBudgetBar').style.width = Math.min(percentage, 100) + '%';
+                document.getElementById('monthlyBudgetBar').style.background = percentage > 100 ? '#ef4444' : '#3b82f6';
+
+                // Check category budgets and show alerts
+                const categoryBudgets = budgets.categoryBudgets || {};
+                const categoryTotals = {};
+                monthExpenses.forEach(e => {
+                    const cat = e.category || 'Other';
+                    categoryTotals[cat] = (categoryTotals[cat] || 0) + Number(e.amount || 0);
+                });
+
+                const alerts = [];
+                Object.keys(categoryBudgets).forEach(cat => {
+                    const spent = categoryTotals[cat] || 0;
+                    const budgetVal = categoryBudgets[cat];
+                    if (spent > budgetVal) {
+                        const excess = spent - budgetVal;
+                        alerts.push(`${cat}: Over by $${excess.toFixed(2)} (Spent: $${spent.toFixed(2)})`);
+                    }
+                });
+
+                if (percentage > 100 || alerts.length > 0) {
+                    document.getElementById('budgetAlertBox').style.display = 'block';
+                    let alertHtml = '';
+                    if (percentage > 100) {
+                        alertHtml += `<p>Monthly budget exceeded by $${(totalSpent - monthlyBudget).toFixed(2)}</p>`;
+                    }
+                    if (alerts.length > 0) {
+                        alertHtml += '<p><strong>Category Alerts:</strong><ul>';
+                        alerts.forEach(a => alertHtml += `<li>${a}</li>`);
+                        alertHtml += '</ul></p>';
+                    }
+                    document.getElementById('budgetAlertText').innerHTML = alertHtml;
+                } else {
+                    document.getElementById('budgetAlertBox').style.display = 'none';
+                }
+            } catch (err) {
+                console.error('Could not update budget status', err);
+            }
+        }
+
+        // Export CSV (GET /api/export/csv)
+        async function exportCSV() {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch('/api/export/csv', { headers: { 'Authorization': 'Bearer ' + token } });
+                if (!res.ok) throw new Error('Export failed');
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = 'expenses.csv'; a.click();
+                URL.revokeObjectURL(url);
+            } catch (err) {
+                alert(err.message || 'Export failed');
+            }
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            showPage('loginPage');
+        }
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            loadProfile();
+        });
+    </script>
+</body>
+</html>

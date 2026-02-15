@@ -1,0 +1,333 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Expense Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+</head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Sign Up - Expense Tracker</title>
+        <link rel="stylesheet" href="style.css">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+        <div class="container">
+                <div class="form-container">
+                        <div class="logo">
+                                <h1>💰 Expense Tracker</h1>
+                                <p>Create an account to start tracking your expenses</p>
+                        </div>
+
+                        <h2>Create Account</h2>
+                        <p class="subtitle">Sign up to save and view your expenses</p>
+
+                        <div id="signup-error" style="display:none;" class="error-message"></div>
+
+                        <form id="signupForm">
+                                <div class="form-group">
+                                        <label for="name">Full Name</label>
+                                        <input type="text" id="name" placeholder="John Doe" required>
+                                </div>
+
+                                <div class="form-group">
+                                        <label for="email">Email address</label>
+                                        <input type="email" id="email" placeholder="you@example.com" required>
+                                </div>
+
+                                <div class="form-group">
+                                        <label for="password">Password</label>
+                                        <input type="password" id="password" placeholder="Create a password" required minlength="6">
+                                </div>
+
+                                <div class="form-group">
+                                        <label for="confirmPassword">Confirm Password</label>
+                                        <input type="password" id="confirmPassword" placeholder="Confirm password" required minlength="6">
+                                </div>
+
+                                <button type="submit" class="btn-primary">Create Account</button>
+
+                                <p class="auth-link">Already have an account? <a href="login.html">Sign in</a></p>
+                        </form>
+                </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const signupForm = document.getElementById('signupForm');
+                const errEl = document.getElementById('signup-error');
+
+                function showError(message) {
+                    if (!errEl) return alert(message);
+                    errEl.textContent = message; errEl.style.display = 'block';
+                    setTimeout(() => errEl.style.display = 'none', 5000);
+                }
+
+                signupForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    const name = document.getElementById('name').value.trim();
+                    const email = document.getElementById('email').value.trim();
+                    const password = document.getElementById('password').value;
+                    const confirmPassword = document.getElementById('confirmPassword').value;
+
+                    if (password !== confirmPassword) { showError('Passwords do not match.'); return; }
+
+                    const submitBtn = signupForm.querySelector('button[type="submit"]');
+                    const orig = submitBtn.innerHTML; submitBtn.disabled = true; submitBtn.innerHTML = 'Creating...';
+
+                    try {
+                        const res = await fetch('/api/signup', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name, email, password })
+                        });
+                        const data = await res.json();
+                        if (!res.ok) {
+                            showError(data.error || 'Signup failed');
+                            return;
+                        }
+                        // Save token and redirect to home
+                        localStorage.setItem('token', data.token);
+                        window.location.href = 'home.html';
+                    } catch (err) {
+                        console.error(err); showError('Network error, try again');
+                    } finally { submitBtn.disabled = false; submitBtn.innerHTML = orig; }
+                });
+            });
+        </script>
+
+        <!-- Font Awesome for icons -->
+        <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</body>
+</html>
+                    <textarea id="address" rows="3" placeholder="Enter your address" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="city">City</label>
+                    <input type="text" id="city" placeholder="Enter your city" required>
+                </div>
+                <div class="form-group">
+                    <label for="state">State</label>
+                    <input type="text" id="state" placeholder="Enter your state" required>
+                </div>
+                <div class="form-group">
+                    <label for="pincode">Pincode</label>
+                    <input type="text" id="pincode" placeholder="Enter pincode" required pattern="[0-9]{6}">
+                </div>
+                <div class="form-group">
+                    <label for="country">Country</label>
+                    <input type="text" id="country" placeholder="Enter your country" required>
+                </div>
+                <div class="form-group">
+                    <input type="checkbox" id="terms" required>
+                    <label for="terms">I agree to the Terms & Conditions</label>
+                </div>
+                <button type="submit" class="btn-primary">Create Account</button>
+            </form>
+            <p class="auth-link">Already have an account? <a href="login.html">Login here</a></p>
+        </div>
+    </div>
+    <!-- Firebase App (the core Firebase SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Your Firebase configuration -->
+    <script src="firebase-config.js"></script>
+    
+    <!-- Auth and initialization -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const signupForm = document.getElementById('signupForm');
+            
+            if (signupForm) {
+                signupForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    // Get form values
+                    const email = document.getElementById('email').value.trim();
+                    const password = document.getElementById('password').value;
+                    const confirmPassword = document.getElementById('confirmPassword').value;
+                    
+                    // Basic validation
+                    if (password !== confirmPassword) {
+                        showError('Passwords do not match');
+                        return;
+                    }
+                    
+                    if (password.length < 6) {
+                        showError('Password must be at least 6 characters long');
+                        return;
+                    }
+                    
+                    try {
+                        // Create user with email and password
+                        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                        const user = userCredential.user;
+                        
+                        // Send verification email
+                        await user.sendEmailVerification();
+                        
+                        // Redirect to login page after successful signup
+                        window.location.href = 'login.html?signup=success';
+                    } catch (error) {
+                        console.error('Signup error:', error);
+                        let errorMessage = 'An error occurred during signup. Please try again.';
+                        
+                        // More specific error messages
+                        if (error.code === 'auth/email-already-in-use') {
+                            errorMessage = 'This email is already registered. Please use a different email or login.';
+                        } else if (error.code === 'auth/invalid-email') {
+                            errorMessage = 'Please enter a valid email address.';
+                        } else if (error.code === 'auth/weak-password') {
+                            errorMessage = 'Password should be at least 6 characters.';
+                        }
+                        
+                        showError(errorMessage);
+                    }
+                });
+            }
+            
+            // Function to show error messages
+            function showError(message) {
+                let errorContainer = document.getElementById('error-container');
+                
+                if (!errorContainer) {
+                    errorContainer = document.createElement('div');
+                    errorContainer.id = 'error-container';
+                    errorContainer.style.color = 'white';
+                    errorContainer.style.backgroundColor = '#e74c3c';
+                    errorContainer.style.padding = '10px';
+                    errorContainer.style.borderRadius = '4px';
+                    errorContainer.style.marginBottom = '15px';
+                    errorContainer.style.textAlign = 'center';
+                    
+                    const form = document.querySelector('form');
+                    form.insertBefore(errorContainer, form.firstChild);
+                }
+                
+                errorContainer.textContent = message;
+                errorContainer.style.display = 'block';
+                
+                // Auto-hide error after 5 seconds
+                setTimeout(() => {
+                    errorContainer.style.display = 'none';
+                }, 5000);
+            }
+            
+            // Check if there's a success message to show
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('signup') === 'success') {
+                alert('Signup successful! Please check your email to verify your account.');
+            }
+        });
+    </script>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign Up</title>
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+<div class="container">
+    <div class="form-container">
+        <h2>Create Account</h2>
+
+        <form id="signupForm">
+            <div class="form-group">
+                <label for="name">Full Name</label>
+                <input type="text" id="name" placeholder="Full name" required>
+            </div>
+            <div class="form-group">
+                <label for="phone">Phone</label>
+                <input type="tel" id="phone" placeholder="Phone number (optional)">
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="Email" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Password" required>
+            </div>
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+            </div>
+            <button type="submit">Sign Up</button>
+        </form>
+
+        <p>Already have account? <a href="login.html">Login</a></p>
+    </div>
+</div>
+
+<script type="module">
+import { auth, db } from "./fire-base.js";
+import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+document.getElementById("signupForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const name = document.getElementById("name").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const confirmPassword = document.getElementById("confirmPassword").value;
+
+    if (password !== confirmPassword) {
+        alert("Passwords do not match");
+        return;
+    }
+
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const orig = submitBtn.innerHTML; submitBtn.disabled = true; submitBtn.innerHTML = 'Creating...';
+    try {
+        console.log('Creating user with email:', email);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        console.log('User created successfully:', user.uid);
+
+        console.log('Saving user data to Firestore...');
+        await setDoc(doc(db, "users", user.uid), {
+            name: name || '',
+            phone: phone || '',
+            email: email,
+            createdAt: serverTimestamp()
+        });
+        console.log('User data saved successfully');
+
+        alert("Signup successful! You can now login.");
+        window.location.href = "login.html";
+    } catch (err) {
+        console.error('[Signup Error]', err.code, err.message);
+        console.error('Full error:', err);
+        let msg = err.message || 'Signup failed';
+        if (err.code === 'auth/email-already-in-use') msg = 'Email is already registered';
+        if (err.code === 'auth/weak-password') msg = 'Password must be at least 6 characters';
+        if (err.code === 'permission-denied') msg = 'Firestore permission denied. Please check Firebase rules.';
+        alert(msg);
+    } finally {
+        submitBtn.disabled = false; submitBtn.innerHTML = orig;
+    }
+});
+</script>
+
+</body>
+</html>

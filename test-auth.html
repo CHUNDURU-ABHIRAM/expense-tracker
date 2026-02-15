@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Firebase Auth</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-container {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        #testResults {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Firebase Auth Test</h1>
+    
+    <div class="test-container">
+        <h2>1. Firebase Initialization</h2>
+        <button id="testInit">Test Firebase Initialization</button>
+        <div id="initResult"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>2. Authentication</h2>
+        <div>
+            <input type="email" id="testEmail" placeholder="Test email" value="test@example.com">
+            <input type="password" id="testPassword" placeholder="Test password" value="password123">
+            <button id="testSignUp">Test Sign Up</button>
+            <button id="testSignIn">Test Sign In</button>
+            <button id="testSignOut">Test Sign Out</button>
+        </div>
+        <div id="authResult"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>3. Firestore Test</h2>
+        <button id="testFirestore">Test Firestore Connection</button>
+        <div id="firestoreResult"></div>
+    </div>
+
+    <div id="testResults">
+        <h3>Test Results</h3>
+        <div id="results"></div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-storage-compat.js"></script>
+    
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+    
+    <!-- Test Script -->
+    <script>
+        // Reference to DOM elements
+        const testInitBtn = document.getElementById('testInit');
+        const testSignUpBtn = document.getElementById('testSignUp');
+        const testSignInBtn = document.getElementById('testSignIn');
+        const testSignOutBtn = document.getElementById('testSignOut');
+        const testFirestoreBtn = document.getElementById('testFirestore');
+        
+        const initResult = document.getElementById('initResult');
+        const authResult = document.getElementById('authResult');
+        const firestoreResult = document.getElementById('firestoreResult');
+        const resultsDiv = document.getElementById('results');
+        
+        // Test results
+        const testResults = {
+            firebaseInit: { success: false, message: '' },
+            auth: { success: false, message: '' },
+            firestore: { success: false, message: '' }
+        };
+        
+        // 1. Test Firebase Initialization
+        testInitBtn.addEventListener('click', () => {
+            try {
+                if (!firebase.apps.length) {
+                    initResult.innerHTML = '<span class="error">Firebase not initialized properly.</span>';
+                    testResults.firebaseInit = { 
+                        success: false, 
+                        message: 'Firebase not initialized properly.' 
+                    };
+                } else {
+                    initResult.innerHTML = '<span class="success">✓ Firebase initialized successfully!</span>';
+                    testResults.firebaseInit = { 
+                        success: true, 
+                        message: 'Firebase initialized successfully!' 
+                    };
+                }
+                updateResults();
+            } catch (error) {
+                initResult.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+                testResults.firebaseInit = { 
+                    success: false, 
+                    message: `Error: ${error.message}` 
+                };
+                updateResults();
+            }
+        });
+        
+        // 2. Test Authentication
+        testSignUpBtn.addEventListener('click', async () => {
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
+            
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                authResult.innerHTML = `
+                    <span class="success">✓ User created successfully!</span>
+                    <div>UID: ${userCredential.user.uid}</div>
+                    <div>Email: ${userCredential.user.email}</div>
+                `;
+                testResults.auth = { 
+                    success: true, 
+                    message: 'User created successfully!' 
+                };
+            } catch (error) {
+                authResult.innerHTML = `<span class="error">Sign up error: ${error.message}</span>`;
+                testResults.auth = { 
+                    success: false, 
+                    message: `Sign up error: ${error.message}` 
+                };
+            }
+            updateResults();
+        });
+        
+        testSignInBtn.addEventListener('click', async () => {
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
+            
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                authResult.innerHTML = `
+                    <span class="success">✓ Signed in successfully!</span>
+                    <div>UID: ${userCredential.user.uid}</div>
+                    <div>Email: ${userCredential.user.email}</div>
+                `;
+                testResults.auth = { 
+                    success: true, 
+                    message: 'Signed in successfully!' 
+                };
+            } catch (error) {
+                authResult.innerHTML = `<span class="error">Sign in error: ${error.message}</span>`;
+                testResults.auth = { 
+                    success: false, 
+                    message: `Sign in error: ${error.message}` 
+                };
+            }
+            updateResults();
+        });
+        
+        testSignOutBtn.addEventListener('click', async () => {
+            try {
+                await auth.signOut();
+                authResult.innerHTML = '<span class="success">✓ Signed out successfully!</span>';
+                testResults.auth = { 
+                    success: true, 
+                    message: 'Signed out successfully!' 
+                };
+            } catch (error) {
+                authResult.innerHTML = `<span class="error">Sign out error: ${error.message}</span>`;
+                testResults.auth = { 
+                    success: false, 
+                    message: `Sign out error: ${error.message}` 
+                };
+            }
+            updateResults();
+        });
+        
+        // 3. Test Firestore
+        testFirestoreBtn.addEventListener('click', async () => {
+            const testDocRef = db.collection('test').doc('connectionTest');
+            
+            try {
+                await testDocRef.set({
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    message: 'Firestore connection test'
+                });
+                
+                const doc = await testDocRef.get();
+                
+                if (doc.exists) {
+                    firestoreResult.innerHTML = `
+                        <span class="success">✓ Firestore connection successful!</span>
+                        <div>Document ID: ${doc.id}</div>
+                        <div>Data: ${JSON.stringify(doc.data())}</div>
+                    `;
+                    testResults.firestore = { 
+                        success: true, 
+                        message: 'Firestore connection successful!' 
+                    };
+                } else {
+                    firestoreResult.innerHTML = '<span class="error">Document not found</span>';
+                    testResults.firestore = { 
+                        success: false, 
+                        message: 'Document not found' 
+                    };
+                }
+            } catch (error) {
+                firestoreResult.innerHTML = `<span class="error">Firestore error: ${error.message}</span>`;
+                testResults.firestore = { 
+                    success: false, 
+                    message: `Firestore error: ${error.message}` 
+                };
+            }
+            updateResults();
+        });
+        
+        // Update test results
+        function updateResults() {
+            let resultsHTML = '<ul>';
+            
+            for (const [test, result] of Object.entries(testResults)) {
+                const status = result.success ? '✓' : '✗';
+                const statusClass = result.success ? 'success' : 'error';
+                resultsHTML += `
+                    <li>
+                        <span class="${statusClass}">${status} ${test}:</span> 
+                        ${result.message}
+                    </li>
+                `;
+            }
+            
+            resultsHTML += '</ul>';
+            resultsDiv.innerHTML = resultsHTML;
+        }
+        
+        // Check auth state
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                console.log('User is signed in:', user.email);
+            } else {
+                console.log('No user is signed in.');
+            }
+        });
+    </script>
+</body>
+</html>

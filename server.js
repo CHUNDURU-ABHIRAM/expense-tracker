@@ -1,0 +1,210 @@
+const express = require('express');
+const bodyParser = require('body-parser');
+const bcrypt = require('bcryptjs');
+const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
+const jwt = require('jsonwebtoken');
+const { v4: uuidv4 } = require('uuid');
+
+const APP_PORT = process.env.PORT || 8000;
+const DATA_FILE = path.join(__dirname, 'data.json');
+const JWT_SECRET = process.env.JWT_SECRET || 'change-this-secret';
+
+const app = express();
+app.use(cors());
+app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname)));
+// serve uploaded files
+const UPLOAD_DIR = path.join(__dirname, 'uploads');
+if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR);
+app.use('/uploads', express.static(UPLOAD_DIR));
+
+const multer = require('multer');
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '';
+    cb(null, uuidv4() + ext);
+  }
+});
+const upload = multer({ storage });
+
+function loadData() {
+  if (!fs.existsSync(DATA_FILE)) {
+    fs.writeFileSync(DATA_FILE, JSON.stringify({ users: [], expenses: [] }, null, 2));
+  }
+  return JSON.parse(fs.readFileSync(DATA_FILE));
+}
+
+function saveData(data) {
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+}
+
+function authMiddleware(req, res, next) {
+  const auth = req.headers['authorization'];
+  if (!auth) return res.status(401).json({ error: 'Missing Authorization header' });
+  const parts = auth.split(' ');
+  if (parts.length !== 2 || parts[0] !== 'Bearer') return res.status(401).json({ error: 'Invalid Authorization format' });
+  const token = parts[1];
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    req.user = payload;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+}
+
+// Sign up (POST required)
+app.post('/api/signup', async (req, res) => {
+  const { name, email, password } = req.body;
+  if (!name || !email || !password) return res.status(400).json({ error: 'Missing fields' });
+  const data = loadData();
+  const exists = data.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  if (exists) return res.status(409).json({ error: 'Email already registered' });
+  const salt = await bcrypt.genSalt(10);
+  const hash = await bcrypt.hash(password, salt);
+  const user = { id: uuidv4(), name, email, passwordHash: hash, createdAt: new Date().toISOString() };
+  data.users.push(user);
+  saveData(data);
+  const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
+  res.json({ user: { id: user.id, name: user.name, email: user.email }, token });
+});
+
+// Login (POST required)
+app.post('/api/login', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) return res.status(400).json({ error: 'Missing fields' });
+  const data = loadData();
+  const user = data.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+  const ok = await bcrypt.compare(password, user.passwordHash);
+  if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
+  const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
+  res.json({ user: { id: user.id, name: user.name, email: user.email }, token });
+});
+
+// Get user's expenses
+app.get('/api/expenses', authMiddleware, (req, res) => {
+  const data = loadData();
+  const userId = req.user.id;
+  const expenses = data.expenses.filter(e => e.userId === userId);
+  res.json({ expenses });
+});
+
+// Get profile
+app.get('/api/profile', authMiddleware, (req, res) => {
+  const data = loadData();
+  const user = data.users.find(u => u.id === req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  const safe = { id: user.id, name: user.name, email: user.email, avatar: user.avatar || null, createdAt: user.createdAt };
+  res.json({ user: safe });
+});
+
+// Update profile (name, email)
+app.put('/api/profile', authMiddleware, (req, res) => {
+  const { name, email } = req.body;
+  if (!name || !email) return res.status(400).json({ error: 'Missing fields' });
+  const data = loadData();
+  const user = data.users.find(u => u.id === req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  // check email uniqueness
+  const other = data.users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.id !== user.id);
+  if (other) return res.status(409).json({ error: 'Email already in use' });
+  user.name = name;
+  user.email = email;
+  saveData(data);
+  const safe = { id: user.id, name: user.name, email: user.email, avatar: user.avatar || null, createdAt: user.createdAt };
+  res.json({ user: safe });
+});
+
+// Upload avatar
+app.post('/api/profile/avatar', authMiddleware, upload.single('avatar'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+  const data = loadData();
+  const user = data.users.find(u => u.id === req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  user.avatar = '/uploads/' + req.file.filename;
+  saveData(data);
+  const safe = { id: user.id, name: user.name, email: user.email, avatar: user.avatar, createdAt: user.createdAt };
+  res.json({ user: safe });
+});
+
+// Add expense
+app.post('/api/expenses', authMiddleware, (req, res) => {
+  const { date, amount, category, desc } = req.body;
+  if (!date || !amount || !category || !desc) return res.status(400).json({ error: 'Missing fields' });
+  const data = loadData();
+  const expense = { id: uuidv4(), userId: req.user.id, date, amount: parseFloat(amount), category, desc, createdAt: new Date().toISOString() };
+  data.expenses.push(expense);
+  saveData(data);
+  res.json({ expense });
+});
+
+// Edit expense
+app.put('/api/expenses/:id', authMiddleware, (req, res) => {
+  const { id } = req.params;
+  const { date, amount, category, desc } = req.body;
+  const data = loadData();
+  const exp = data.expenses.find(e => e.id === id && e.userId === req.user.id);
+  if (!exp) return res.status(404).json({ error: 'Expense not found' });
+  if (date) exp.date = date;
+  if (amount) exp.amount = parseFloat(amount);
+  if (category) exp.category = category;
+  if (desc) exp.desc = desc;
+  saveData(data);
+  res.json({ expense: exp });
+});
+
+// Delete expense
+app.delete('/api/expenses/:id', authMiddleware, (req, res) => {
+  const { id } = req.params;
+  const data = loadData();
+  const idx = data.expenses.findIndex(e => e.id === id && e.userId === req.user.id);
+  if (idx === -1) return res.status(404).json({ error: 'Expense not found' });
+  data.expenses.splice(idx, 1);
+  saveData(data);
+  res.json({ ok: true });
+});
+
+// Get user's budgets
+app.get('/api/budgets', authMiddleware, (req, res) => {
+  const data = loadData();
+  const user = data.users.find(u => u.id === req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  const budgets = user.budgets || {};
+  res.json({ budgets });
+});
+
+// Set/update budgets (monthly total and category-wise)
+app.put('/api/budgets', authMiddleware, (req, res) => {
+  const { monthlyBudget, categoryBudgets } = req.body;
+  const data = loadData();
+  const user = data.users.find(u => u.id === req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  if (monthlyBudget !== undefined) user.budgets = user.budgets || {};
+  user.budgets.monthlyBudget = monthlyBudget || 0;
+  user.budgets.categoryBudgets = categoryBudgets || {};
+  saveData(data);
+  res.json({ budgets: user.budgets });
+});
+
+// Export CSV
+app.get('/api/export/csv', authMiddleware, (req, res) => {
+  const data = loadData();
+  const expenses = data.expenses.filter(e => e.userId === req.user.id);
+  const header = 'date,amount,category,description\n';
+  const rows = expenses.map(e => `${e.date},"${e.amount}","${e.category}","${(e.desc || '').replace(/"/g, '""')}"`).join('\n');
+  const csv = header + rows;
+  res.setHeader('Content-Disposition', 'attachment; filename=expenses.csv');
+  res.setHeader('Content-Type', 'text/csv');
+  res.send(csv);
+});
+
+// Fallback
+app.get('/api', (req, res) => res.json({ status: 'ok' }));
+
+app.listen(APP_PORT, () => {
+  console.log(`Server running on http://localhost:${APP_PORT}`);
+});
