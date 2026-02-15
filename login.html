@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Expense Tracker</title>
+    <title>Login - The Expense</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     
@@ -12,7 +12,7 @@
     <div class="container">
         <div class="form-container">
             <div class="logo">
-                <h1>💰 Expense Tracker</h1>
+                <h1>💰 The Expense</h1>
                 <p>Track your expenses, save money, and achieve your financial goals</p>
             </div>
             
@@ -71,8 +71,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
     
-    <!-- Your Firebase configuration -->
-    <script src="firebase-config.js"></script>
+    <!-- Firebase configuration removed; using server-side Admin -->
     
     <!-- Auth and initialization -->
     <script>
@@ -236,6 +235,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    
+        <!-- Firebase client SDK removed; using server-side Admin and /api endpoints -->
+    
 </head>
 <body>
     <div class="container">
@@ -295,32 +297,35 @@
         </div>
     </div>
     
-    <script type="module">
-import { auth } from './fire-base.js';
-import { signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js';
-
-document.getElementById('loginForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    const orig = submitBtn.innerHTML; submitBtn.disabled = true; submitBtn.innerHTML = 'Signing in...';
-    try {
-        console.log('Signing in with email:', email);
-        await signInWithEmailAndPassword(auth, email, password);
-        console.log('Login successful');
-        window.location.href = 'home.html';
-    } catch (err) {
-        console.error('[Login Error]', err.code, err.message);
-        console.error('Full error:', err);
-        let msg = err.message || 'Login failed';
-        if (err.code === 'auth/user-not-found') msg = 'Email not registered';
-        if (err.code === 'auth/wrong-password') msg = 'Incorrect password';
-        alert(msg);
-    } finally {
-        submitBtn.disabled = false; submitBtn.innerHTML = orig;
-    }
-});
+    <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const orig = submitBtn.innerHTML; submitBtn.disabled = true; submitBtn.innerHTML = 'Signing in...';
+        try {
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+            if (!res.ok) throw data;
+            localStorage.setItem('token', data.token);
+            // store user if provided by server
+            if (data.user) {
+                localStorage.setItem('user', JSON.stringify(data.user));
+                try { if (window.refreshProfileUI) window.refreshProfileUI(); } catch(e) { /* ignore */ }
+            }
+            window.location.href = 'home.html';
+        } catch (err) {
+            console.error('Login failed', err);
+            alert(err.error || err.message || 'Login failed');
+        } finally {
+            submitBtn.disabled = false; submitBtn.innerHTML = orig;
+        }
+    });
     </script>
 </body>
 </html>

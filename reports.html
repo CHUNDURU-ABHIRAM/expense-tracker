@@ -3,15 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reports - Expense Tracker</title>
+    <title>Reports - The Expense</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <!-- Firebase client SDK removed; using server-side Admin -->
 </head>
 <body>
     <div class="dashboard">
@@ -19,7 +16,7 @@
         <aside class="sidebar">
             <div class="logo">
                 <i class="fas fa-wallet"></i>
-                <span>Expense Tracker</span>
+                <span>The Expense</span>
             </div>
             
             <nav class="main-nav">
@@ -326,7 +323,6 @@
     </div>
 
     <!-- Scripts -->
-    <script src="firebase-config.js"></script>
     <script src="auth.js"></script>
     <script src="expense-manager.js"></script>
     <script>

@@ -23,21 +23,53 @@ function goHome() {
 }
 
 function loadProfile() {
-  let user = JSON.parse(localStorage.getItem("user"));
+  // Prefer server-side profile when available (JWT auth)
+  (async () => {
+    try {
+      const res = await window.apiFetch('/profile');
+      const user = res.user || {};
+      document.getElementById("pname").value = user.name || '';
+      document.getElementById("pemail").value = user.email || '';
+    } catch (err) {
+      // Fallback to localStorage if server not available
+      const user = JSON.parse(localStorage.getItem("user") || '{}');
+      document.getElementById("pname").value = user.name || '';
+      document.getElementById("pemail").value = user.email || '';
+    }
+  })();
+}
 
-  if (user) {
-    document.getElementById("pname").value = user.name;
-    document.getElementById("pemail").value = user.email;
+// Called when auth state changes to refresh profile UI if user is on profile page
+function refreshProfileUI() {
+  // If profile inputs exist, try to populate them from server then fallback to localStorage
+  if (document.getElementById('pname') || document.getElementById('pemail')) {
+    // Try server-first
+    (async () => {
+      try {
+        await loadProfile();
+      } catch (e) {
+        // loadProfile already falls back to localStorage
+      }
+      // Also load budgets if available on the page
+      try { if (typeof loadBudgets === 'function') loadBudgets(); } catch(e) { /* ignore */ }
+    })();
   }
 }
 
 function updateProfile() {
-  let name = document.getElementById("pname").value;
-  let email = document.getElementById("pemail").value;
-
-  localStorage.setItem("user", JSON.stringify({ name, email }));
-
-  alert("Profile updated successfully!");
+  (async () => {
+    const name = document.getElementById("pname").value;
+    const email = document.getElementById("pemail").value;
+    try {
+      await window.apiFetch('/profile', { method: 'PUT', body: JSON.stringify({ name, email }) });
+      // update local fallback
+      localStorage.setItem("user", JSON.stringify({ name, email }));
+      alert('Profile updated successfully');
+    } catch (err) {
+      console.error('Could not update profile', err);
+      alert(err.error || 'Failed to update profile');
+    }
+  })();
 }
 
 function addExpense() {

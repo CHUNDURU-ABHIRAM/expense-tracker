@@ -1,4 +1,4 @@
-# Expense Tracker (Local API)
+# The Expense (Local API)
 
 This project now includes a small Express API server to support secure sign-up/login (POST with password hashing), multi-user expenses stored in a local JSON file, CSV export, and a single-page frontend under `index.html`.
 

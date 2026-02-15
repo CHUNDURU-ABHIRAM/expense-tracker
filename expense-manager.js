@@ -7,34 +7,21 @@ class ExpenseManager {
     }
 
     async init() {
-        // Check authentication
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                this.currentUser = user;
-                await this.loadExpenses();
-                this.updateUI();
-            } else {
-                window.location.href = 'login.html';
-            }
-        });
+        try {
+            const user = await window.requireAuth();
+            this.currentUser = user;
+            await this.loadExpenses();
+            this.updateUI();
+        } catch (err) {
+            // requireAuth will redirect
+        }
     }
 
     // Load expenses from Firebase
     async loadExpenses() {
         try {
-            const snapshot = await db.collection('users')
-                .doc(this.currentUser.uid)
-                .collection('expenses')
-                .orderBy('date', 'desc')
-                .get();
-            
-            this.expenses = [];
-            snapshot.forEach(doc => {
-                this.expenses.push({
-                    id: doc.id,
-                    ...doc.data()
-                });
-            });
+            const res = await window.apiFetch('/expenses');
+            this.expenses = (res.expenses || []).sort((a,b) => new Date(b.date) - new Date(a.date));
         } catch (error) {
             console.error('Error loading expenses:', error);
             this.showError('Failed to load expenses');
@@ -44,21 +31,10 @@ class ExpenseManager {
     // Add new expense
     async addExpense(expenseData) {
         try {
-            const docRef = await db.collection('users')
-                .doc(this.currentUser.uid)
-                .collection('expenses')
-                .add({
-                    ...expenseData,
-                    date: new Date(expenseData.date),
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
 
-            // Add to local array
-            this.expenses.unshift({
-                id: docRef.id,
-                ...expenseData,
-                date: new Date(expenseData.date)
-            });
+            const res = await window.apiFetch('/expenses', { method: 'POST', body: JSON.stringify(expenseData) });
+            const newExp = res.expense;
+            this.expenses.unshift(newExp);
 
             this.updateUI();
             this.showSuccess('Expense added successfully');
@@ -77,12 +53,7 @@ class ExpenseManager {
         }
 
         try {
-            await db.collection('users')
-                .doc(this.currentUser.uid)
-                .collection('expenses')
-                .doc(expenseId)
-                .delete();
-
+            await window.apiFetch('/expenses/' + expenseId, { method: 'DELETE' });
             // Remove from local array
             this.expenses = this.expenses.filter(exp => exp.id !== expenseId);
             this.updateUI();

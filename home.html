@@ -12,7 +12,7 @@
         <aside class="sidebar">
             <div class="brand">
                 <div class="logo-icon">💼</div>
-                <div class="brand-text">Expense Tracker</div>
+                <div class="brand-text">The Expense</div>
             </div>
             <nav class="nav">
                 <ul>
@@ -56,34 +56,21 @@
         </main>
     </div>
 
-    <script type="module">
-    import { auth, db } from './fire-base.js';
-    import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js';
-    import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js';
-
-    document.addEventListener('DOMContentLoaded', function() {
+    <script>
+    document.addEventListener('DOMContentLoaded', async function() {
         const userNameEl = document.getElementById('userName');
         const logoutBtn = document.getElementById('logoutBtn');
-
-        onAuthStateChanged(auth, async (user) => {
-            if (!user) {
-                window.location.href = 'login.html';
-                return;
-            }
-            try {
-                const snap = await getDoc(doc(db, 'users', user.uid));
-                const name = snap.exists() ? (snap.data().name || user.email) : (user.displayName || user.email);
-                userNameEl.textContent = name;
-            } catch (err) {
-                console.error('Failed to load profile', err);
-                userNameEl.textContent = user.displayName || user.email || '';
-            }
-        });
+        try {
+            const user = await window.requireAuth();
+            userNameEl.textContent = user.name || user.email || '';
+        } catch (err) {
+            // requireAuth will redirect to login
+        }
 
         if (logoutBtn) {
-            logoutBtn.addEventListener('click', async function(e) {
+            logoutBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                try { await signOut(auth); window.location.href = 'login.html'; } catch (err) { console.error(err); }
+                window.logout();
             });
         }
     });

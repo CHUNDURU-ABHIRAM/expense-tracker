@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expense Tracker</title>
+    <title>The Expense</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
@@ -18,7 +18,7 @@
         <div class="container">
             <div class="form-container">
                 <div class="logo">
-                    <h1>💰 Expense Tracker</h1>
+                    <h1>💰 The Expense</h1>
                     <p>Track your expenses, save money, and achieve your financial goals</p>
                 </div>
                 
@@ -511,7 +511,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
-    <script src="firebase-config.js"></script>
     <script>
         // Navigation helper
         function showPage(pageId) {
@@ -1046,15 +1045,21 @@
                 const categoryBudgets = {};
                 const cats = ['Food', 'Transport', 'Shopping', 'Entertainment', 'Other'];
                 cats.forEach(cat => {
-                    const val = parseFloat(document.getElementById(`cat_${cat}`).value);
-                    if (val > 0) categoryBudgets[cat] = val;
+                    const el = document.getElementById(`cat_${cat}`);
+                    if (!el) return;
+                    const raw = el.value;
+                    const val = parseFloat(raw);
+                    // Accept 0 and positive numbers only; ignore empty/NaN
+                    if (Number.isFinite(val) && val >= 0) categoryBudgets[cat] = val;
                 });
                 
                 await apiFetch('/budgets', { method: 'PUT', body: JSON.stringify({ monthlyBudget, categoryBudgets }) });
                 alert('Budgets saved successfully!');
                 loadBudgets(); // Reload to show saved values
             } catch (err) {
-                alert(err.error || 'Could not save budgets');
+                console.error('saveBudgets error', err);
+                const msg = (err && (err.error || err.details)) ? (err.error || err.details) : JSON.stringify(err);
+                alert(msg || 'Could not save budgets');
             }
         }
 

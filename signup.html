@@ -5,16 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - Expense Tracker</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <!-- Firebase client SDK removed; using server-side Admin and local API -->
 </head>
 <!DOCTYPE html>
 <html lang="en">
 <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Sign Up - Expense Tracker</title>
+        <title>Sign Up - The Expense</title>
         <link rel="stylesheet" href="style.css">
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
@@ -22,7 +20,7 @@
         <div class="container">
                 <div class="form-container">
                         <div class="logo">
-                                <h1>💰 Expense Tracker</h1>
+                                <h1>💰 The Expense</h1>
                                 <p>Create an account to start tracking your expenses</p>
                         </div>
 
@@ -139,8 +137,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
     
-    <!-- Your Firebase configuration -->
-    <script src="firebase-config.js"></script>
+    <!-- Firebase configuration removed; server-side Admin will be used -->
     
     <!-- Auth and initialization -->
     <script>
@@ -277,11 +274,7 @@
     </div>
 </div>
 
-<script type="module">
-import { auth, db } from "./fire-base.js";
-import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
-import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
-
+<script>
 document.getElementById("signupForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -299,26 +292,20 @@ document.getElementById("signupForm").addEventListener("submit", async (e) => {
     const submitBtn = e.target.querySelector('button[type="submit"]');
     const orig = submitBtn.innerHTML; submitBtn.disabled = true; submitBtn.innerHTML = 'Creating...';
     try {
-        console.log('Creating user with email:', email);
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-        console.log('User created successfully:', user.uid);
-
-        console.log('Saving user data to Firestore...');
-        await setDoc(doc(db, "users", user.uid), {
-            name: name || '',
-            phone: phone || '',
-            email: email,
-            createdAt: serverTimestamp()
+        const res = await fetch('/api/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, password })
         });
-        console.log('User data saved successfully');
+        const data = await res.json();
+        if (!res.ok) throw data;
 
-        alert("Signup successful! You can now login.");
-        window.location.href = "login.html";
+        localStorage.setItem('token', data.token);
+        alert("Signup successful! Redirecting...");
+        window.location.href = "home.html";
     } catch (err) {
-        console.error('[Signup Error]', err.code, err.message);
-        console.error('Full error:', err);
-        let msg = err.message || 'Signup failed';
+        console.error('[Signup Error]', err);
+        let msg = err.error || err.message || 'Signup failed';
         if (err.code === 'auth/email-already-in-use') msg = 'Email is already registered';
         if (err.code === 'auth/weak-password') msg = 'Password must be at least 6 characters';
         if (err.code === 'permission-denied') msg = 'Firestore permission denied. Please check Firebase rules.';
