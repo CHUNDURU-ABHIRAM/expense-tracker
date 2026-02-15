@@ -110,31 +110,45 @@ function authMiddleware(req, res, next) {
 
 // Sign up (POST required)
 app.post('/api/signup', async (req, res) => {
-  const { name, email, password } = req.body;
-  if (!name || !email || !password) return res.status(400).json({ error: 'Missing fields' });
-  const data = await loadData();
-  const exists = (data.users || []).find(u => u.email.toLowerCase() === email.toLowerCase());
-  if (exists) return res.status(409).json({ error: 'Email already registered' });
-  const salt = await bcrypt.genSalt(10);
-  const hash = await bcrypt.hash(password, salt);
-  const user = { id: uuidv4(), name, email, passwordHash: hash, createdAt: new Date().toISOString() };
-  data.users.push(user);
-  await saveData(data);
-  const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
-  res.json({ user: { id: user.id, name: user.name, email: user.email }, token });
+  try {
+    const { name, email, password } = req.body;
+    if (!name || !email || !password) return res.status(400).json({ error: 'Missing fields' });
+    const data = await loadData();
+    // Ensure data structure is initialized
+    data.users = data.users || [];
+    data.expenses = data.expenses || [];
+    const exists = (data.users || []).find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (exists) return res.status(409).json({ error: 'Email already registered' });
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(password, salt);
+    const user = { id: uuidv4(), name, email, passwordHash: hash, createdAt: new Date().toISOString() };
+    data.users.push(user);
+    await saveData(data);
+    const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ user: { id: user.id, name: user.name, email: user.email }, token });
+  } catch (err) {
+    console.error('Signup error:', err);
+    res.status(500).json({ error: 'Signup failed', details: err.message });
+  }
 });
 
 // Login (POST required)
 app.post('/api/login', async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) return res.status(400).json({ error: 'Missing fields' });
-  const data = await loadData();
-  const user = (data.users || []).find(u => u.email.toLowerCase() === email.toLowerCase());
-  if (!user) return res.status(401).json({ error: 'Invalid credentials' });
-  const ok = await bcrypt.compare(password, user.passwordHash);
-  if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
-  const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
-  res.json({ user: { id: user.id, name: user.name, email: user.email }, token });
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Missing fields' });
+    const data = await loadData();
+    data.users = data.users || [];
+    const user = (data.users || []).find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+    const ok = await bcrypt.compare(password, user.passwordHash);
+    if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
+    const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ user: { id: user.id, name: user.name, email: user.email }, token });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ error: 'Login failed', details: err.message });
+  }
 });
 
 // Get user's expenses
