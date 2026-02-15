@@ -1,5 +1,17 @@
 // Lightweight auth utilities that use the server API (JWT) instead of Firebase client SDK.
 
+// Get API base URL - for deployed apps, set window.API_BASE_URL before loading this script
+// or it defaults to /api for local development
+function getApiBaseUrl() {
+    if (window.API_BASE_URL) return window.API_BASE_URL;
+    // For local development (localhost)
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'http://localhost:8000/api';
+    }
+    // For deployed apps, assume backend is served from same origin
+    return window.location.origin + '/api';
+}
+
 function getToken() {
     return localStorage.getItem('token');
 }
@@ -9,7 +21,8 @@ async function apiFetch(path, opts = {}) {
     opts.headers['Content-Type'] = 'application/json';
     const token = getToken();
     if (token) opts.headers['Authorization'] = 'Bearer ' + token;
-    const res = await fetch('/api' + path, opts);
+    const baseUrl = getApiBaseUrl();
+    const res = await fetch(baseUrl + path, opts);
     const json = await res.json().catch(() => ({}));
     if (!res.ok) throw json;
     return json;

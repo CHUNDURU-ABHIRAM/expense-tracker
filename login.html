@@ -298,6 +298,15 @@
     </div>
     
     <script>
+    // Helper to get API base URL (same logic as auth.js)
+    function getApiBaseUrl() {
+        if (window.API_BASE_URL) return window.API_BASE_URL;
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            return 'http://localhost:8000/api';
+        }
+        return window.location.origin + '/api';
+    }
+    
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('email').value.trim();
@@ -305,7 +314,8 @@
         const submitBtn = e.target.querySelector('button[type="submit"]');
         const orig = submitBtn.innerHTML; submitBtn.disabled = true; submitBtn.innerHTML = 'Signing in...';
         try {
-            const res = await fetch('/api/login', {
+            const apiUrl = getApiBaseUrl();
+            const res = await fetch(apiUrl + '/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })

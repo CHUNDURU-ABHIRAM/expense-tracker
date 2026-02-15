@@ -58,6 +58,15 @@
         </div>
 
         <script>
+            // Helper to get API base URL
+            function getApiBaseUrl() {
+                if (window.API_BASE_URL) return window.API_BASE_URL;
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    return 'http://localhost:8000/api';
+                }
+                return window.location.origin + '/api';
+            }
+            
             document.addEventListener('DOMContentLoaded', function() {
                 const signupForm = document.getElementById('signupForm');
                 const errEl = document.getElementById('signup-error');
@@ -81,7 +90,8 @@
                     const orig = submitBtn.innerHTML; submitBtn.disabled = true; submitBtn.innerHTML = 'Creating...';
 
                     try {
-                        const res = await fetch('/api/signup', {
+                        const apiUrl = getApiBaseUrl();
+                        const res = await fetch(apiUrl + '/signup', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ name, email, password })
